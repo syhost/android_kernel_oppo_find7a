@@ -1410,6 +1410,7 @@ qpnp_chg_vbatdet_set(struct qpnp_chg_chip *chip, int vbatdet_mv)
 #endif
 /* OPPO 2013-10-17 wangjc Modify end */
 
+#ifndef CONFIG_BQ24196_CHARGER
 static void
 qpnp_chg_set_appropriate_vbatdet(struct qpnp_chg_chip *chip)
 {
@@ -1426,6 +1427,13 @@ qpnp_chg_set_appropriate_vbatdet(struct qpnp_chg_chip *chip)
 		qpnp_chg_vbatdet_set(chip, chip->max_voltage_mv
 			- chip->resume_delta_mv);
 }
+#else
+static void
+qpnp_chg_set_appropriate_vbatdet(struct qpnp_chg_chip *chip)
+{
+	qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+}
+#endif
 
 /* OPPO 2013-10-17 wangjc Delete begin for use bq charger */
 #ifndef CONFIG_BQ24196_CHARGER
@@ -5446,8 +5454,13 @@ qpnp_chg_hwinit(struct qpnp_chg_chip *chip, u8 subtype,
 			pr_debug("failed setting safe_voltage rc=%d\n", rc);
 			return rc;
 		}
+#ifndef CONFIG_BQ24196_CHARGER
 		rc = qpnp_chg_vbatdet_set(chip,
 				chip->max_voltage_mv - chip->resume_delta_mv);
+#else
+		rc = qpnp_chg_vbatdet_set(chip,
+				chip->resume_delta_mv);
+#endif
 		if (rc) {
 			pr_debug("failed setting resume_voltage rc=%d\n", rc);
 			return rc;
@@ -6015,8 +6028,12 @@ static int qpnp_start_charging(struct qpnp_chg_chip *chip)
 
 		qpnp_chg_ibatmax_set(chip, 200);
 
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip, 4000
 				- chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 	}else if (batt_temp <= chip->mBatteryTempBoundT2){ // 0 ~ 10
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__COOL);
 
@@ -6039,8 +6056,12 @@ static int qpnp_start_charging(struct qpnp_chg_chip *chip)
 		}
 		qpnp_chg_ibatmax_set(chip, chg_current);
 		qpnp_chg_ibatmax_set(chip, chg_current);//set 2 times
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip, chip->cool_bat_mv
 				- chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 	}else if (batt_temp <= chip->mBatteryTempBoundT3){ // 10 ~ 45
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__NORMAL);
 
@@ -6081,8 +6102,12 @@ static int qpnp_start_charging(struct qpnp_chg_chip *chip)
 			qpnp_chg_ibatmax_set(chip, 1024);
 		}
 
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip,
 				chip->max_voltage_mv - chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 	}else if (batt_temp <= chip->mBatteryTempBoundT4){  // 45 ~ 55
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__WARM);
 
@@ -6105,8 +6130,12 @@ static int qpnp_start_charging(struct qpnp_chg_chip *chip)
 		}
 		qpnp_chg_ibatmax_set(chip, chg_current);
 		qpnp_chg_ibatmax_set(chip, chg_current);//set 2 times
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip, chip->warm_bat_mv
 				- chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 	}else{
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__HOT);
 /* OPPO 2013-11-05 wangjc Add begin for use bq charger */
@@ -6237,9 +6266,14 @@ static int handle_batt_temp_little_cold(struct qpnp_chg_chip *chip)
 
 		qpnp_chg_ibatmax_set(chip, 200);
 
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip, 4000
 				- chip->resume_delta_mv);
 
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
+		
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION_LITTLE__COLD);
 
 		/* Update the temperature boundaries */
@@ -6297,8 +6331,12 @@ static int handle_batt_temp_cool(struct qpnp_chg_chip *chip)
 			chg_current = 500;
 		}
 		qpnp_chg_ibatmax_set(chip, chg_current);
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip, chip->cool_bat_mv
 				- chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 
 		/* Update battery temp region */
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__COOL);
@@ -6369,8 +6407,13 @@ static int handle_batt_temp_normal(struct qpnp_chg_chip *chip)
 /* OPPO 2013-10-17 wangjc Delete end */
 		qpnp_chg_vddmax_set(chip, chip->max_voltage_mv);
 
+		
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip,
 				chip->max_voltage_mv - chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 
 		/* Update battery temp region */
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__NORMAL);
@@ -6428,8 +6471,12 @@ static int handle_batt_temp_warm(struct qpnp_chg_chip *chip)
 			chg_current = 500;
 		}
 		qpnp_chg_ibatmax_set(chip, chg_current);
+#ifndef CONFIG_BQ24196_CHARGER
 		qpnp_chg_vbatdet_set(chip, chip->warm_bat_mv
 				- chip->resume_delta_mv);
+#else
+		qpnp_chg_vbatdet_set(chip, chip->resume_delta_mv);
+#endif
 
 		/* Update battery temp region */
 		qpnp_battery_temp_region_set(chip, CV_BATTERY_TEMP_REGION__WARM);
